@@ -1,0 +1,86 @@
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    output = "/home/ubuntu/yoga_website/nextjs_space/node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  createdAt DateTime @default(now())
+  status    String   @default("new") // new, read, responded
+  
+  @@map("contact_submissions")
+}
+
+model BlogPost {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  excerpt     String
+  content     String
+  imageUrl    String
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("blog_posts")
+}
+
+model ClassSchedule {
+  id          String   @id @default(cuid())
+  name        String
+  style       String   // Hatha, Vinyasa, Yin, etc.
+  description String
+  duration    Int      // in minutes
+  level       String   // Beginner, Intermediate, Advanced, All Levels
+  dayOfWeek   String   // Monday, Tuesday, etc.
+  time        String   // "09:00", "18:30", etc.
+  maxCapacity Int      @default(12)
+  priceDropIn Decimal  @db.Decimal(10, 2)
+  active      Boolean  @default(true)
+  
+  bookings    Booking[]
+  
+  @@unique([dayOfWeek, time])
+  @@map("class_schedules")
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  classScheduleId String
+  customerName    String
+  customerEmail   String
+  customerPhone   String?
+  bookingDate     DateTime      // The specific date for this class booking
+  status          String        @default("confirmed") // confirmed, cancelled, completed
+  paymentStatus   String        @default("pending")   // pending, paid, refunded
+  paymentIntentId String?       // For Stripe integration later
+  notes           String?
+  createdAt       DateTime      @default(now())
+  
+  classSchedule   ClassSchedule @relation(fields: [classScheduleId], references: [id])
+  
+  @@map("bookings")
+}
+
+model ClassPackage {
+  id          String  @id @default(cuid())
+  name        String  // "5-Class Pack", "10-Class Pack", "Monthly Unlimited"
+  description String
+  classes     Int?    // Number of classes (null for unlimited)
+  validDays   Int     // Validity period in days
+  price       Decimal @db.Decimal(10, 2)
+  active      Boolean @default(true)
+  
+  @@map("class_packages")
+}
